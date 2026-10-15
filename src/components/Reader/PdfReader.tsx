@@ -228,7 +228,7 @@ export const PdfReader: React.FC<PdfReaderProps> = ({
                 setCurrentPage(val);
               }
             }}
-            style={{ width: '55px', padding: '0.2rem 0.4rem', textAlign: 'center', borderRadius: '4px' }}
+            style={{ width: '60px', padding: '0.25rem 0.5rem', textAlign: 'center', borderRadius: 'var(--radius-btn)' }}
           />
           <span style={{ color: 'var(--text-secondary)' }}>of {totalPages}</span>
         </div>

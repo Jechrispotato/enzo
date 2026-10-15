@@ -262,24 +262,24 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
           </div>
 
           {showAddQuote && (
-            <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }}>
+            <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
               <textarea
                 value={newQuoteText}
                 onChange={(e) => setNewQuoteText(e.target.value)}
                 placeholder="Paste or write the quote..."
                 rows={2}
-                style={{ width: '100%', padding: '0.5rem', fontSize: '0.85rem', marginBottom: '0.5rem' }}
+                style={{ width: '100%', padding: '0.65rem', fontSize: '0.85rem', marginBottom: '0.5rem', borderRadius: 'var(--radius-md)' }}
               />
               <input
                 type="text"
                 value={newQuoteAnnotation}
                 onChange={(e) => setNewQuoteAnnotation(e.target.value)}
                 placeholder="Optional personal reflection on this quote..."
-                style={{ width: '100%', padding: '0.45rem', fontSize: '0.82rem', marginBottom: '0.6rem' }}
+                style={{ width: '100%', padding: '0.55rem 0.85rem', fontSize: '0.82rem', marginBottom: '0.6rem', borderRadius: 'var(--radius-btn)' }}
               />
               <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                 <button className="btn-minimal" onClick={() => setShowAddQuote(false)}>Cancel</button>
-                <button className="btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.82rem' }} onClick={handleAddQuote}>Save</button>
+                <button className="btn-primary" style={{ padding: '0.45rem 1rem', fontSize: '0.82rem' }} onClick={handleAddQuote}>Save</button>
               </div>
             </div>
           )}
@@ -291,7 +291,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '200px', overflowY: 'auto' }}>
               {quotes.map((q) => (
-                <div key={q.id} style={{ padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                <div key={q.id} style={{ padding: '0.85rem 1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
                   <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: q.annotation ? '0.4rem' : 0 }}>
                     “{q.text}”
                   </p>

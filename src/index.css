@@ -20,9 +20,11 @@
   --accent-active: #7a2e3b;
   --shadow-book: 0 4px 14px rgba(35, 30, 24, 0.07), 0 1px 3px rgba(35, 30, 24, 0.05);
   --shadow-elevated: 0 10px 30px rgba(35, 30, 24, 0.1);
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+  --radius-btn: 9999px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
 
   /* Typography */
   --font-serif: 'Newsreader', 'EB Garamond', Georgia, serif;
