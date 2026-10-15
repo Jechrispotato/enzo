@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#f6f0e4"/>
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="none" stroke="#e4dbcc" stroke-width="3"/>
+  <g transform="translate(136, 128)">
+    <!-- Elegant open book / leaf silhouette with classical proportions -->
+    <path d="M120 20 C60 0, 10 24, 0 36 L0 200 C15 186, 60 164, 120 182 C180 164, 225 186, 240 200 L240 36 C230 24, 180 0, 120 20 Z" fill="#2c2824" />
+    <path d="M120 20 L120 182" stroke="#f6f0e4" stroke-width="3" stroke-linecap="round" />
+    <!-- Classical bookmark ribbon in deep burgundy -->
+    <path d="M112 18 L112 108 L120 98 L128 108 L128 18 Z" fill="#7a2e3b" />
+    <!-- Classical serif 'e' underneath -->
+    <text x="120" y="245" font-family="'Newsreader', 'EB Garamond', Georgia, serif" font-size="34" font-style="italic" font-weight="500" fill="#7a2e3b" text-anchor="middle" letter-spacing="4">enzo</text>
+  </g>
+</svg>

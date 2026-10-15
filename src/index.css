@@ -1,0 +1,192 @@
+/* ==========================================================================
+   enzo — Minimalist Literary Reading Experience
+   Design System & Base Tokens
+   ========================================================================== */
+
+:root {
+  /* Color Tokens: Warm Paper (Default) */
+  --bg-primary: #fbf8f2;
+  --bg-secondary: #f4efe6;
+  --bg-tertiary: #ede6da;
+  --bg-elevated: #ffffff;
+  --text-primary: #1f1e1b;
+  --text-secondary: #706a62;
+  --text-muted: #999288;
+  --border-subtle: #e6dfd5;
+  --border-strong: #cfc6b8;
+  --accent-burgundy: #7a2e3b;
+  --accent-olive: #546347;
+  --accent-amber: #b06237;
+  --accent-active: #7a2e3b;
+  --shadow-book: 0 4px 14px rgba(35, 30, 24, 0.07), 0 1px 3px rgba(35, 30, 24, 0.05);
+  --shadow-elevated: 0 10px 30px rgba(35, 30, 24, 0.1);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Typography */
+  --font-serif: 'Newsreader', 'EB Garamond', Georgia, serif;
+  --font-serif-classic: 'EB Garamond', 'Newsreader', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-dyslexic: 'Plus Jakarta Sans', Arial, sans-serif;
+
+  /* Reading Column Sizes */
+  --reader-width-narrow: 580px;
+  --reader-width-medium: 700px;
+  --reader-width-wide: 860px;
+  --reader-width-full: 100%;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+}
+
+/* Theme: Pure White */
+[data-theme="white"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f7f7;
+  --bg-tertiary: #eeeeee;
+  --bg-elevated: #ffffff;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border-subtle: #e5e5e5;
+  --border-strong: #cccccc;
+  --accent-active: #1a1a1a;
+  --shadow-book: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Theme: Sepia */
+[data-theme="sepia"] {
+  --bg-primary: #f4edd8;
+  --bg-secondary: #ebe2c8;
+  --bg-tertiary: #dfd5b8;
+  --bg-elevated: #faf5e6;
+  --text-primary: #2d2315;
+  --text-secondary: #6e604d;
+  --text-muted: #968670;
+  --border-subtle: #ddd0b2;
+  --border-strong: #c8baa0;
+  --accent-active: #6e3518;
+  --shadow-book: 0 4px 14px rgba(45, 35, 21, 0.08);
+}
+
+/* Theme: Dark Ink */
+[data-theme="dark"] {
+  --bg-primary: #141413;
+  --bg-secondary: #1b1b19;
+  --bg-tertiary: #242421;
+  --bg-elevated: #1e1e1c;
+  --text-primary: #ece8df;
+  --text-secondary: #9c978e;
+  --text-muted: #6e6a63;
+  --border-subtle: #2a2a26;
+  --border-strong: #3d3c36;
+  --accent-active: #c76f7f;
+  --shadow-book: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Base Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+#root {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Typography Primitives */
+h1, h2, h3, h4, .serif-heading {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent-active);
+}
+
+/* Custom Scrollbar for Quiet Reading */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(122, 46, 59, 0.18);
+  color: inherit;
+}
+
+/* Utilities */
+.text-serif {
+  font-family: var(--font-serif);
+}
+
+.text-muted {
+  color: var(--text-secondary);
+}
+
+.screen-reader-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
