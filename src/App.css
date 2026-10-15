@@ -44,6 +44,20 @@
   user-select: none;
 }
 
+.enzo-app-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform var(--transition-fast);
+}
+
+.enzo-brand:hover .enzo-app-icon {
+  transform: scale(1.04);
+}
+
 .enzo-brand-logo {
   height: 34px;
   width: auto;

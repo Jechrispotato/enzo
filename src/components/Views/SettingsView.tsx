@@ -195,7 +195,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* About enzo */}
       <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', padding: '1rem 0' }}>
-        <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+        <img
+          src="/enzo_app_logo.png"
+          alt="enzo - 724 app logo"
+          style={{ width: '64px', height: '64px', borderRadius: '12px', border: '1px solid var(--border-subtle)', objectFit: 'cover', marginBottom: '0.75rem', boxShadow: 'var(--shadow-book)' }}
+        />
+        <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
           enzo - 724
         </p>
         <p>Zero backend • No subscriptions • Zero tracking • Pure local privacy</p>

@@ -37,6 +37,11 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="enzo-header">
       <div className="enzo-brand" onClick={() => onNavigate('library')} title="enzo - 724">
         <img
+          src="/enzo_app_logo.png"
+          alt="enzo"
+          className="enzo-app-icon"
+        />
+        <img
           src="/enzo_logo.png"
           alt="enzo - 724"
           className="enzo-brand-logo"
