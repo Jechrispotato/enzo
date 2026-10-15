@@ -1,7 +1,7 @@
 {
-  "name": "enzo — Minimalist Literary Reader",
-  "short_name": "enzo",
-  "description": "A quiet, minimalist personal digital library and reader for EPUB, PDF, and TXT.",
+  "name": "enzo - 724",
+  "short_name": "enzo - 724",
+  "description": "enzo - 724",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,6 +10,12 @@
   "theme_color": "#fbf8f2",
   "categories": ["books", "lifestyle", "productivity"],
   "icons": [
+    {
+      "src": "/enzo_logo.png",
+      "sizes": "1080x516",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "/icons/icon.svg",
       "sizes": "512x512",

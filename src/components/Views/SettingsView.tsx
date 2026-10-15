@@ -196,7 +196,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* About enzo */}
       <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', padding: '1rem 0' }}>
         <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-          enzo — A quiet, intimate digital reading sanctuary.
+          enzo - 724
         </p>
         <p>Zero backend • No subscriptions • Zero tracking • Pure local privacy</p>
       </div>

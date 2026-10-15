@@ -35,15 +35,13 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="enzo-header">
-      <div className="enzo-brand" onClick={() => onNavigate('library')}>
-        <svg className="enzo-logo-mark" viewBox="0 0 28 28" fill="none">
-          <rect width="28" height="28" rx="6" fill="var(--bg-secondary)" stroke="var(--border-strong)" />
-          <path d="M7 6 C10 5, 12 7, 14 8 C16 7, 18 5, 21 6 L21 19 C18 18, 16 19, 14 20 C12 19, 10 18, 7 19 Z" fill="var(--text-primary)" />
-          <path d="M14 8 L14 20" stroke="var(--bg-secondary)" strokeWidth="1.2" />
-        </svg>
-        <div className="enzo-wordmark">
-          enzo<span className="dot">.</span>
-        </div>
+      <div className="enzo-brand" onClick={() => onNavigate('library')} title="enzo - 724">
+        <img
+          src="/enzo_logo.png"
+          alt="enzo - 724"
+          className="enzo-brand-logo"
+        />
+        <span className="enzo-brand-tagline">724</span>
       </div>
 
       <nav className="enzo-nav" aria-label="Main Navigation">
