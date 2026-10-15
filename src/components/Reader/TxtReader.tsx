@@ -3,6 +3,7 @@ import { parseTxtFile, type ParsedTxt } from '../../services/parsers/txtParser';
 import { updateBookProgress } from '../../services/db';
 import type { Book, ReaderSettings, TocItem } from '../../types';
 import { ChevronLeft, ChevronRight, Bookmark, Loader2 } from 'lucide-react';
+import { PaperPageTurner } from './PaperPageTurner';
 
 interface TxtReaderProps {
   book: Book;
@@ -135,7 +136,79 @@ export const TxtReader: React.FC<TxtReaderProps> = ({
   }
 
   const currentSection = parsed.sections[sectionIndex];
-  const paragraphs = currentSection ? currentSection.content.split(/\r?\n\s*\r?\n/) : [];
+  const totalSections = parsed.sections.length;
+
+  const renderSectionProse = (sec: { title: string; content: string } | undefined, isCurrent = false) => {
+    if (!sec) return <div className="paper-page-empty" />;
+    const paragraphs = sec.content.split(/\r?\n\s*\r?\n/);
+
+    return (
+      <div className={`reader-prose-wrapper width-${settings.columnWidth} margin-${settings.pageMargins}`}>
+        <article
+          className={`reader-prose font-${settings.fontFamily} align-${settings.textAlign}`}
+          style={{
+            fontSize: `${settings.fontSize}px`,
+            lineHeight: settings.lineSpacing,
+          }}
+        >
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.8rem', marginBottom: '2rem' }}>
+            {sec.title}
+          </h1>
+
+          {paragraphs.map((p, idx) => {
+            const cleanP = p.trim();
+            if (!cleanP) return null;
+
+            if (cleanP.startsWith('>')) {
+              return (
+                <blockquote key={idx}>
+                  {cleanP.replace(/^>\s*/, '')}
+                </blockquote>
+              );
+            }
+
+            if (cleanP.startsWith('#')) {
+              return (
+                <h2 key={idx}>
+                  {cleanP.replace(/^#+\s*/, '')}
+                </h2>
+              );
+            }
+
+            return <p key={idx}>{cleanP}</p>;
+          })}
+        </article>
+
+        {isCurrent && totalSections > 1 && (
+          <div className="chapter-nav-paper-row">
+            <button
+              className="btn-paper-turn"
+              onClick={goToPrev}
+              disabled={sectionIndex === 0}
+              style={{ opacity: sectionIndex === 0 ? 0.35 : 1 }}
+            >
+              <ChevronLeft size={16} />
+              <span>Previous Section</span>
+            </button>
+
+            <span className="font-deutsch" style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>
+              {sectionIndex + 1} / {totalSections}
+            </span>
+
+            <button
+              className="btn-paper-turn"
+              onClick={goToNext}
+              disabled={sectionIndex >= totalSections - 1}
+              style={{ opacity: sectionIndex >= totalSections - 1 ? 0.35 : 1 }}
+            >
+              <span>Next Section</span>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -168,84 +241,16 @@ export const TxtReader: React.FC<TxtReaderProps> = ({
         </div>
       )}
 
-      <div className={`reader-prose-wrapper width-${settings.columnWidth} margin-${settings.pageMargins}`}>
-        <article
-          className={`reader-prose font-${settings.fontFamily} align-${settings.textAlign}`}
-          style={{
-            fontSize: `${settings.fontSize}px`,
-            lineHeight: settings.lineSpacing,
-          }}
-        >
-          {currentSection && (
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.8rem', marginBottom: '2rem' }}>
-              {currentSection.title}
-            </h1>
-          )}
-
-          {paragraphs.map((p, idx) => {
-            const cleanP = p.trim();
-            if (!cleanP) return null;
-
-            // Check if markdown blockquote
-            if (cleanP.startsWith('>')) {
-              return (
-                <blockquote key={idx}>
-                  {cleanP.replace(/^>\s*/, '')}
-                </blockquote>
-              );
-            }
-
-            // Heading in markdown
-            if (cleanP.startsWith('#')) {
-              return (
-                <h2 key={idx}>
-                  {cleanP.replace(/^#+\s*/, '')}
-                </h2>
-              );
-            }
-
-            return <p key={idx}>{cleanP}</p>;
-          })}
-        </article>
-
-        {/* Section Navigation Footer */}
-        {parsed.sections.length > 1 && (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop: '4rem',
-              paddingTop: '2rem',
-              borderTop: '1px solid var(--border-subtle)',
-            }}
-          >
-            <button
-              className="btn-minimal"
-              onClick={goToPrev}
-              disabled={sectionIndex === 0}
-              style={{ opacity: sectionIndex === 0 ? 0.35 : 1 }}
-            >
-              <ChevronLeft size={16} />
-              <span>Previous Section</span>
-            </button>
-
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              {sectionIndex + 1} of {parsed.sections.length}
-            </span>
-
-            <button
-              className="btn-minimal"
-              onClick={goToNext}
-              disabled={sectionIndex >= parsed.sections.length - 1}
-              style={{ opacity: sectionIndex >= parsed.sections.length - 1 ? 0.35 : 1 }}
-            >
-              <span>Next Section</span>
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-      </div>
+      <PaperPageTurner
+        currentContent={renderSectionProse(currentSection, true)}
+        nextContent={renderSectionProse(parsed.sections[sectionIndex + 1])}
+        prevContent={renderSectionProse(parsed.sections[sectionIndex - 1])}
+        hasNext={sectionIndex < totalSections - 1}
+        hasPrev={sectionIndex > 0}
+        onNext={goToNext}
+        onPrev={goToPrev}
+        theme={settings.theme}
+      />
     </div>
   );
 };

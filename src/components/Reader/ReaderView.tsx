@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, List, SlidersHorizontal, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { EpubReader } from './EpubReader';
 import { PdfReader } from './PdfReader';
 import { TxtReader } from './TxtReader';
-import { TocDrawer } from './TocDrawer';
-import { ReaderSettingsDrawer } from './ReaderSettingsDrawer';
+import { SwordMenuModal } from './SwordMenuModal';
 import { SaveQuoteModal } from './SaveQuoteModal';
 import { getBookFile, getReaderSettings, saveReaderSettings } from '../../services/db';
 import type { Book, ReaderSettings, TocItem, JournalEntry } from '../../types';
@@ -40,9 +39,8 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
   const [totalItems, setTotalItems] = useState<number>(1);
   const [toc, setToc] = useState<TocItem[]>(book.toc || []);
 
-  // Drawers & Modals
-  const [isTocOpen, setIsTocOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  // Sword Hub Modal & Immersive
+  const [isSwordMenuOpen, setIsSwordMenuOpen] = useState(false);
   const [isImmersive, setIsImmersive] = useState(false);
 
   // Quote Saving
@@ -84,7 +82,6 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
 
     return () => {
       isCancelled = true;
-      // Reset theme attribute to default when leaving reader if desired
     };
   }, [book.id]);
 
@@ -135,59 +132,27 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
     );
   }
 
-  const currentPercent = totalItems > 0 ? Math.round(((currentIndex + 1) / totalItems) * 100) : 0;
-
   return (
     <div className="reader-container">
-      {/* Top Header */}
-      <header className={`reader-header ${isImmersive ? 'immersive-hidden' : ''}`}>
+      {/* Minimalist Top Header (Matching user reference) */}
+      <header className={`reader-header-minimal ${isImmersive ? 'immersive-hidden' : ''}`}>
         <button
-          className="btn-minimal"
-          onClick={onBackToLibrary}
-          style={{ border: 'none', padding: '0.4rem 0.6rem' }}
-          aria-label="Back to library"
+          className="reader-sword-btn"
+          onClick={() => setIsSwordMenuOpen(true)}
+          title="Reading Menu, Settings & Library (Press Sword)"
+          aria-label="Reading Menu and Settings"
         >
-          <ArrowLeft size={18} />
-          <span style={{ fontSize: '0.85rem' }}>Library</span>
+          <img src="/sword.png" alt="Sword navigation emblem" className="reader-sword-img" />
         </button>
 
-        <div className="reader-header-center">
-          <span className="reader-header-title">{book.title}</span>
-          <span className="reader-header-chapter">
-            {activeTitle || (book.format === 'pdf' ? `Page ${currentIndex + 1} of ${totalItems}` : 'Reading')}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          {book.format !== 'pdf' && (
-            <button
-              className="btn-minimal"
-              onClick={() => setIsTocOpen(true)}
-              title="Table of Contents"
-            >
-              <List size={16} />
-              <span className="screen-reader-only">Contents</span>
-            </button>
-          )}
-
-          <button
-            className="btn-minimal"
-            onClick={() => setIsSettingsOpen(true)}
-            title="Appearance & Typography"
-          >
-            <SlidersHorizontal size={16} />
-            <span className="screen-reader-only">Appearance</span>
-          </button>
-
-          <button
-            className="btn-minimal"
-            onClick={() => setIsImmersive(!isImmersive)}
-            title={isImmersive ? 'Show controls' : 'Distraction-free mode'}
-          >
-            {isImmersive ? <EyeOff size={16} /> : <Eye size={16} />}
-            <span className="screen-reader-only">Immersive Mode</span>
-          </button>
-        </div>
+        <button
+          className="reader-progress-indicator font-deutsch"
+          onClick={() => setIsSwordMenuOpen(true)}
+          title="Progress & Chapter Navigation"
+          aria-label="Chapter progress"
+        >
+          {currentIndex + 1}/{totalItems}
+        </button>
       </header>
 
       {/* Reader Formats */}
@@ -239,40 +204,23 @@ export const ReaderView: React.FC<ReaderViewProps> = ({
         />
       )}
 
-      {/* Bottom Footer Progress Bar */}
-      <footer className={`reader-footer ${isImmersive ? 'immersive-hidden' : ''}`}>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', minWidth: '60px' }}>
-          {activeTitle || 'Reading'}
-        </span>
-
-        <div style={{ flex: 1, maxWidth: '400px', margin: '0 1rem' }}>
-          <div className="progress-bar-track">
-            <div className="progress-bar-fill" style={{ width: `${currentPercent}%` }} />
-          </div>
-        </div>
-
-        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', minWidth: '40px', textAlign: 'right' }}>
-          {currentPercent}%
-        </span>
-      </footer>
-
-      {/* TOC Drawer */}
-      <TocDrawer
-        isOpen={isTocOpen}
-        onClose={() => setIsTocOpen(false)}
+      {/* Comprehensive Sword Reader Hub (All settings, TOC, progress scrubber, and back button) */}
+      <SwordMenuModal
+        isOpen={isSwordMenuOpen}
+        onClose={() => setIsSwordMenuOpen(false)}
+        book={book}
+        activeTitle={activeTitle}
+        currentIndex={currentIndex}
+        totalItems={totalItems}
         toc={toc}
-        activeChapterIndex={currentIndex}
-        onSelectChapter={(_href, index) => {
-          setCurrentIndex(index);
-        }}
-      />
-
-      {/* Reader Settings Drawer */}
-      <ReaderSettingsDrawer
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
         settings={settings}
         onUpdateSettings={handleUpdateSettings}
+        onSelectChapter={(index) => {
+          setCurrentIndex(index);
+        }}
+        onBackToLibrary={onBackToLibrary}
+        isImmersive={isImmersive}
+        onToggleImmersive={() => setIsImmersive((prev) => !prev)}
       />
 
       {/* Save Quote Modal */}

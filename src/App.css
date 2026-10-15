@@ -1419,6 +1419,10 @@
     padding: 0.6rem 0.85rem;
   }
 
+  .reader-header-minimal {
+    padding: 1rem 1rem 0.5rem;
+  }
+
   .reader-footer {
     padding: 0.6rem 0.85rem;
   }
@@ -1427,3 +1431,531 @@
     padding: 1.5rem 0.5rem 5rem;
   }
 }
+
+/* ==========================================================================
+   Minimalist Book Reader Header (Matching Reference Design)
+   ========================================================================== */
+.reader-header-minimal {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 2rem 0.5rem;
+  background-color: var(--bg-primary);
+  border: none;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.reader-header-minimal.immersive-hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.reader-sword-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-btn);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.reader-sword-btn:hover {
+  opacity: 0.8;
+  transform: scale(1.04);
+}
+
+.reader-sword-btn:active {
+  transform: scale(0.96);
+}
+
+.reader-sword-img {
+  height: 26px;
+  width: auto;
+  max-width: 125px;
+  object-fit: contain;
+  display: block;
+}
+
+[data-theme="dark"] .reader-sword-img {
+  filter: brightness(0) invert(0.92);
+}
+
+.reader-progress-indicator {
+  font-family: var(--font-deutsch);
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-btn);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  line-height: 1;
+}
+
+.reader-progress-indicator:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.reader-progress-indicator:active {
+  transform: scale(0.96);
+}
+
+/* Sword Reader Hub Modal */
+.sword-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(20, 20, 19, 0.45);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.25rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.sword-modal-dialog {
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.25s ease-out;
+}
+
+.sword-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.btn-sword-back {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-sword-back:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.sword-modal-tabs {
+  display: flex;
+  padding: 0 1.25rem;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background-color: var(--bg-primary);
+}
+
+.sword-tab-btn {
+  flex: 1;
+  padding: 0.65rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sword-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.sword-tab-btn.active {
+  color: var(--accent-active);
+  border-bottom-color: var(--accent-active);
+}
+
+.sword-modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  max-height: calc(85vh - 180px);
+}
+
+.sword-progress-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.25rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.sword-progress-number {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.sword-scrubber {
+  width: 100%;
+  accent-color: var(--accent-active);
+  cursor: pointer;
+  height: 6px;
+  background-color: var(--border-subtle);
+  border-radius: 9999px;
+  outline: none;
+}
+
+.sword-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-btn);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.sword-nav-btn:hover:not(:disabled) {
+  background-color: var(--bg-tertiary);
+}
+
+.sword-toc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sword-toc-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sword-toc-item:hover {
+  background-color: var(--bg-secondary);
+}
+
+.sword-toc-item.active {
+  background-color: var(--bg-secondary);
+  border-color: var(--accent-active);
+  font-weight: 600;
+}
+
+.sword-toc-number {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 28px;
+}
+
+.sword-toc-item.active .sword-toc-number {
+  color: var(--accent-active);
+}
+
+.sword-toc-title {
+  flex: 1;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sword-toc-check {
+  color: var(--accent-active);
+}
+
+.sword-setting-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.sword-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+}
+
+.sword-theme-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-btn);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sword-theme-pill.active {
+  border-color: var(--accent-active);
+  border-width: 2px;
+}
+
+.sword-options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.sword-pill-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-btn);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.sword-pill-btn:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.sword-pill-btn.active {
+  background-color: var(--accent-active);
+  color: #ffffff;
+  border-color: var(--accent-active);
+}
+
+.sword-stepper-btn {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-btn);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.sword-stepper-btn:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* ==========================================================================
+   Realistic 3D Paper Page Turning
+   ========================================================================== */
+.paper-turn-stage {
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - 80px);
+  perspective: 2000px;
+  perspective-origin: 50% 50%;
+  touch-action: pan-y;
+  user-select: none;
+  overflow-x: clip;
+}
+
+.paper-turn-stage.dragging {
+  cursor: grabbing;
+}
+
+.paper-page-normal {
+  width: 100%;
+  min-height: 100%;
+  position: relative;
+}
+
+.paper-3d-book {
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - 80px);
+  transform-style: preserve-3d;
+}
+
+.paper-page-underneath {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-color: var(--bg-primary);
+  overflow: hidden;
+}
+
+.paper-ambient-shadow {
+  position: absolute;
+  inset: 0;
+  background-color: #000000;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
+.paper-turning-leaf {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  transform-style: preserve-3d;
+  background-color: var(--bg-primary);
+  backface-visibility: hidden;
+}
+
+.paper-leaf-front {
+  position: absolute;
+  inset: 0;
+  background-color: var(--bg-primary);
+  overflow: hidden;
+  backface-visibility: hidden;
+  transition: opacity 0.05s ease;
+}
+
+.paper-curl-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+[data-theme="dark"] .paper-curl-overlay {
+  mix-blend-mode: screen;
+}
+
+.paper-leaf-back {
+  position: absolute;
+  inset: 0;
+  background-color: var(--bg-secondary);
+  overflow: hidden;
+  backface-visibility: hidden;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.paper-leaf-back-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-secondary);
+}
+
+.paper-spine-gradient {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.15), transparent);
+  pointer-events: none;
+}
+
+/* Edge Turn Zones & Hints */
+.paper-edge-turn-zone {
+  position: absolute;
+  top: 80px;
+  bottom: 40px;
+  width: 48px;
+  z-index: 30;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.paper-edge-turn-zone.left {
+  left: 0;
+}
+
+.paper-edge-turn-zone.right {
+  right: 0;
+}
+
+.paper-edge-turn-zone:hover {
+  opacity: 1;
+}
+
+.paper-curl-hint {
+  width: 6px;
+  height: 60px;
+  border-radius: 9999px;
+  background-color: var(--border-strong);
+  opacity: 0.6;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.paper-edge-turn-zone:hover .paper-curl-hint {
+  opacity: 1;
+  transform: scaleY(1.3);
+}
+
+/* Bottom Paper Turn Stepper */
+.chapter-nav-paper-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.btn-paper-turn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius-btn);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-paper-turn:hover:not(:disabled) {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+

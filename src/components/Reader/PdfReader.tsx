@@ -274,7 +274,7 @@ export const PdfReader: React.FC<PdfReaderProps> = ({
               backgroundColor: 'var(--bg-elevated)',
               padding: '0.5rem 1rem',
               borderRadius: '20px',
-              boxShadow: 'var(--shadow-elevated)',
+              border: '1px solid var(--border-strong)',
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
