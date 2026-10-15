@@ -1,10 +1,7 @@
-# enzo — Minimalist Literary Reading PWA
+# enz724
 
-A quiet, intimate personal digital library and reader inspired by the atmosphere of physical books, literary journals, and independent bookstores.
+idk, just a stall for my go-to-read books
 
-Built as a Progressive Web App (PWA) with **zero backend, zero databases, and zero tracking**. All your books, reading progress, and personal journal notes remain entirely on your own devices.
-
----
 
 ## Highlights
 
