@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from './components/Header';
 import { LibraryView } from './components/Views/LibraryView';
 import { JournalView } from './components/Views/JournalView';
@@ -8,7 +8,8 @@ import { BookDetailModal } from './components/BookDetailModal';
 import { ImportModal } from './components/ImportModal';
 import { ReaderView } from './components/Reader/ReaderView';
 import { getAllBooks, getAllJournalEntries, getReaderSettings } from './services/db';
-import type { Book, JournalEntry } from './types';
+import { ensureSampleLibrary } from './services/sampleBook';
+import type { Book, JournalEntry, FilterOption } from './types';
 import './App.css';
 
 export function App() {
@@ -16,10 +17,16 @@ export function App() {
   const [books, setBooks] = useState<Book[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   
+  // Library Display & Filters
+  const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('carousel');
+  const [activeFilter, setActiveFilter] = useState<FilterOption>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Modals & Reader
   const [selectedDetailBook, setSelectedDetailBook] = useState<Book | null>(null);
   const [activeReaderBook, setActiveReaderBook] = useState<Book | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isAppFading, setIsAppFading] = useState(false);
 
   // PWA Install Prompt
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -27,7 +34,11 @@ export function App() {
   // Load books, journal, and reader theme from IndexedDB
   const refreshLibrary = useCallback(async () => {
     try {
-      const loadedBooks = await getAllBooks();
+      let loadedBooks = await getAllBooks();
+      // If brand new or empty, automatically load the 3 sample books from the screenshots
+      if (loadedBooks.length === 0) {
+        loadedBooks = await ensureSampleLibrary();
+      }
       const loadedJournal = await getAllJournalEntries();
       setBooks(loadedBooks);
       setJournalEntries(loadedJournal);
@@ -72,14 +83,27 @@ export function App() {
     }
   };
 
+  // Subtle fade in / fade out transition when book is clicked
   const handleOpenReader = (book: Book) => {
-    setSelectedDetailBook(null);
-    setActiveReaderBook(book);
+    setIsAppFading(true);
+    setTimeout(() => {
+      setSelectedDetailBook(null);
+      setActiveReaderBook(book);
+      setTimeout(() => {
+        setIsAppFading(false);
+      }, 50);
+    }, 220);
   };
 
   const handleBackToLibrary = () => {
-    setActiveReaderBook(null);
-    refreshLibrary();
+    setIsAppFading(true);
+    setTimeout(() => {
+      setActiveReaderBook(null);
+      refreshLibrary();
+      setTimeout(() => {
+        setIsAppFading(false);
+      }, 50);
+    }, 220);
   };
 
   const handleBookAdded = (book: Book) => {
@@ -100,36 +124,95 @@ export function App() {
     }
   };
 
-  // If reading view is active, render reader full-screen
+  const handleSeedSampleLibrary = async () => {
+    try {
+      const seeded = await ensureSampleLibrary();
+      setBooks((prev) => {
+        const existingIds = new Set(prev.map((b) => b.id));
+        const toAdd = seeded.filter((b) => !existingIds.has(b.id));
+        return [...prev, ...toAdd];
+      });
+    } catch (e) {
+      console.error('Error seeding sample books', e);
+    }
+  };
+
+  // Filtered books
+  const filteredBooks = useMemo(() => {
+    let result = [...books];
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (b) => b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)
+      );
+    }
+
+    if (activeFilter === 'reading') {
+      result = result.filter((b) => b.progress > 0 && b.progress < 100);
+    } else if (activeFilter === 'completed') {
+      result = result.filter((b) => b.progress === 100);
+    } else if (activeFilter === 'epub') {
+      result = result.filter((b) => b.format === 'epub');
+    } else if (activeFilter === 'pdf') {
+      result = result.filter((b) => b.format === 'pdf');
+    } else if (activeFilter === 'txt') {
+      result = result.filter((b) => b.format === 'txt' || b.format === 'md');
+    }
+
+    return result;
+  }, [books, searchQuery, activeFilter]);
+
+  // Identify most recent book for resume
+  const continueBook = useMemo(() => {
+    if (books.length === 0) return null;
+    const sorted = [...books].sort((a, b) => b.lastRead - a.lastRead);
+    return sorted[0];
+  }, [books]);
+
+  // If reading view is active, render reader full-screen with smooth fade container
   if (activeReaderBook) {
     return (
-      <ReaderView
-        book={activeReaderBook}
-        onBackToLibrary={handleBackToLibrary}
-        onBookUpdated={handleBookUpdated}
-      />
+      <div className={`app-fade-container ${isAppFading ? 'fading' : ''}`}>
+        <ReaderView
+          book={activeReaderBook}
+          onBackToLibrary={handleBackToLibrary}
+          onBookUpdated={handleBookUpdated}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="enzo-app">
+    <div className={`enzo-app app-fade-container ${isAppFading ? 'fading' : ''}`}>
       <Header
         currentView={currentView}
         onNavigate={(view) => setCurrentView(view)}
         onOpenImport={() => setIsImportModalOpen(true)}
         deferredPrompt={deferredPrompt}
         onInstallApp={handleInstallApp}
+        books={books}
+        journalCount={journalEntries.length}
+        continueBook={continueBook}
+        onOpenReader={handleOpenReader}
+        activeFilter={activeFilter}
+        onSelectFilter={setActiveFilter}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onToggleViewMode={() => setViewMode((prev) => (prev === 'carousel' ? 'grid' : 'carousel'))}
+        onSeedSampleLibrary={handleSeedSampleLibrary}
       />
 
       <main className="enzo-main">
         {currentView === 'library' && (
           <LibraryView
-            books={books}
-            journalCount={journalEntries.length}
-            onOpenBookDetail={(book) => setSelectedDetailBook(book)}
+            books={filteredBooks}
+            viewMode={viewMode}
+            onToggleViewMode={() => setViewMode((prev) => (prev === 'carousel' ? 'grid' : 'carousel'))}
             onOpenReader={handleOpenReader}
             onOpenImport={() => setIsImportModalOpen(true)}
-            onBookAdded={handleBookAdded}
+            onSeedSampleLibrary={handleSeedSampleLibrary}
           />
         )}
 

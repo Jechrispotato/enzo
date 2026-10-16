@@ -11,9 +11,12 @@ export interface ImportResult {
   isDuplicate?: boolean;
 }
 
-export async function importBookFile(file: File | { blob: Blob; name: string }): Promise<ImportResult> {
+export async function importBookFile(
+  file: File | { blob: Blob; name: string; coverOverride?: string }
+): Promise<ImportResult> {
   const fileName = 'name' in file ? file.name : 'Unknown';
   const fileBlob = 'blob' in file ? file.blob : file;
+  const coverOverride = 'coverOverride' in file ? file.coverOverride : undefined;
   const ext = fileName.split('.').pop()?.toLowerCase();
 
   let format: BookFormat;
@@ -66,6 +69,10 @@ export async function importBookFile(file: File | { blob: Blob; name: string }):
         title: s.title,
         href: `sec_${idx}`,
       }));
+    }
+
+    if (coverOverride) {
+      coverUrl = coverOverride;
     }
 
     // Check for duplicates

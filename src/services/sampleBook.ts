@@ -1,11 +1,10 @@
 import JSZip from 'jszip';
 import { importBookFile } from './bookImporter';
+import { generateDesignerCover } from './coverGenerator';
 import type { Book } from '../types';
 
 export async function createAndImportSampleEpub(): Promise<Book | undefined> {
   const zip = new JSZip();
-
-  // Create standard EPUB container
   zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
   
   const containerXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -39,7 +38,6 @@ export async function createAndImportSampleEpub(): Promise<Book | undefined> {
   zip.file('OEBPS/content.opf', opfXml);
 
   const navXhtml = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head><title>Table of Contents</title></head>
 <body>
@@ -56,7 +54,6 @@ export async function createAndImportSampleEpub(): Promise<Book | undefined> {
   zip.file('OEBPS/nav.xhtml', navXhtml);
 
   const chapter1Xhtml = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head><title>I. The Sanctity of Old Pages</title></head>
 <body>
@@ -72,7 +69,6 @@ export async function createAndImportSampleEpub(): Promise<Book | undefined> {
   zip.file('OEBPS/chapter1.xhtml', chapter1Xhtml);
 
   const chapter2Xhtml = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head><title>II. Time, Memory, and Solitude</title></head>
 <body>
@@ -85,7 +81,6 @@ export async function createAndImportSampleEpub(): Promise<Book | undefined> {
   zip.file('OEBPS/chapter2.xhtml', chapter2Xhtml);
 
   const chapter3Xhtml = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head><title>III. The Quiet Companionship of Words</title></head>
 <body>
@@ -101,10 +96,128 @@ export async function createAndImportSampleEpub(): Promise<Book | undefined> {
   zip.file('OEBPS/chapter3.xhtml', chapter3Xhtml);
 
   const epubBlob = await zip.generateAsync({ type: 'blob', mimeType: 'application/epub+zip' });
-  const result = await importBookFile({ blob: epubBlob, name: 'On the Pleasure of Reading — William Hazlitt.epub' });
+  const coverUrl = generateDesignerCover('On the Pleasure of Reading', 'William Hazlitt', 0);
+  const result = await importBookFile({
+    blob: epubBlob,
+    name: 'On the Pleasure of Reading — William Hazlitt.epub',
+    coverOverride: coverUrl,
+  });
 
-  if (result.success && result.book) {
-    return result.book;
-  }
-  return undefined;
+  return result.book;
+}
+
+export async function createAndImportTheUniverseOfUs(): Promise<Book | undefined> {
+  const zip = new JSZip();
+  zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+  
+  zip.file('META-INF/container.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles>
+</container>`);
+
+  zip.file('OEBPS/content.opf', `<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="pub-id" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>The Universe of Us</dc:title>
+    <dc:creator>Lang Leav</dc:creator>
+    <dc:language>en</dc:language>
+  </metadata>
+  <manifest>
+    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="ch1" href="ch1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="ch2" href="ch2.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine><itemref idref="ch1"/><itemref idref="ch2"/></spine>
+</package>`);
+
+  zip.file('OEBPS/nav.xhtml', `<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head><title>Contents</title></head>
+<body><nav epub:type="toc"><h1>Contents</h1><ol><li><a href="ch1.xhtml">Stardust</a></li><li><a href="ch2.xhtml">Orbit</a></li></ol></nav></body>
+</html>`);
+
+  zip.file('OEBPS/ch1.xhtml', `<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Stardust</title></head><body>
+<h1>Stardust</h1>
+<p>If you came to me with a face I have not seen, with a voice I have never heard, I would still know you. Even if centuries passed between us, I would still feel you.</p>
+<blockquote><p>“We were born of stardust, you and I; wandering across constellations until we found our way home.”</p></blockquote>
+<p>There are stars whose light only reaches the earth after thousands of years. So it is with memories; they travel through silence to illuminate the quietest nights.</p>
+</body></html>`);
+
+  zip.file('OEBPS/ch2.xhtml', `<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Orbit</title></head><body>
+<h1>Orbit</h1>
+<p>You whispered secrets into the evening air, and the wind carried them back to me like a familiar poem.</p>
+<p>We are all gravitational pulls in each other’s orbits—sometimes close, sometimes distant, but always tethered by word and quiet thought.</p>
+</body></html>`);
+
+  const epubBlob = await zip.generateAsync({ type: 'blob', mimeType: 'application/epub+zip' });
+  const coverUrl = generateDesignerCover('The Universe of Us', 'Lang Leav', 3);
+  const result = await importBookFile({
+    blob: epubBlob,
+    name: 'The Universe of Us — Lang Leav.epub',
+    coverOverride: coverUrl,
+  });
+
+  return result.book;
+}
+
+export async function createAndImportNormalPeople(): Promise<Book | undefined> {
+  const zip = new JSZip();
+  zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+  
+  zip.file('META-INF/container.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles>
+</container>`);
+
+  zip.file('OEBPS/content.opf', `<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="pub-id" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>Normal People</dc:title>
+    <dc:creator>Sally Rooney</dc:creator>
+    <dc:language>en</dc:language>
+  </metadata>
+  <manifest>
+    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="ch1" href="ch1.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine><itemref idref="ch1"/></spine>
+</package>`);
+
+  zip.file('OEBPS/nav.xhtml', `<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head><title>Contents</title></head>
+<body><nav epub:type="toc"><h1>Contents</h1><ol><li><a href="ch1.xhtml">January</a></li></ol></nav></body>
+</html>`);
+
+  zip.file('OEBPS/ch1.xhtml', `<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>January</title></head><body>
+<h1>January</h1>
+<p>Marianne answered the door when Connell rang the bell. She was still wearing her school uniform, but she’d taken off the sweater, so it was just the blouse and the skirt.</p>
+<p>They looked at each other for a second without speaking. There was always that quiet pause between them, like a breath taken before diving underwater.</p>
+<blockquote><p>“Life offers so few people with whom one can share a silence that is not empty, but full.”</p></blockquote>
+<p>The light in the hallway was pale grey, the color of Dublin winter afternoons.</p>
+</body></html>`);
+
+  const epubBlob = await zip.generateAsync({ type: 'blob', mimeType: 'application/epub+zip' });
+  const coverUrl = generateDesignerCover('Normal People', 'Sally Rooney', 1);
+  const result = await importBookFile({
+    blob: epubBlob,
+    name: 'Normal People — Sally Rooney.epub',
+    coverOverride: coverUrl,
+  });
+
+  return result.book;
+}
+
+export async function ensureSampleLibrary(): Promise<Book[]> {
+  const books: Book[] = [];
+  const b1 = await createAndImportSampleEpub();
+  if (b1) books.push(b1);
+  const b2 = await createAndImportNormalPeople();
+  if (b2) books.push(b2);
+  const b3 = await createAndImportTheUniverseOfUs();
+  if (b3) books.push(b3);
+  return books;
 }
