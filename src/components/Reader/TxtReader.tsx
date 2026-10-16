@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { parseTxtFile, type ParsedTxt } from '../../services/parsers/txtParser';
 import { updateBookProgress } from '../../services/db';
 import type { Book, ReaderSettings, TocItem } from '../../types';
-import { ChevronLeft, ChevronRight, Bookmark, Loader2 } from 'lucide-react';
-import { PaperPageTurner } from './PaperPageTurner';
+import { Bookmark, Loader2 } from 'lucide-react';
 
 interface TxtReaderProps {
   book: Book;
@@ -31,17 +30,24 @@ export const TxtReader: React.FC<TxtReaderProps> = ({
     externalSectionIndex !== undefined ? externalSectionIndex : (book.currentLocation?.chapterIndex || 0)
   );
 
-  useEffect(() => {
-    if (externalSectionIndex !== undefined && externalSectionIndex !== sectionIndex) {
-      setSectionIndex(externalSectionIndex);
-    }
-  }, [externalSectionIndex]);
-
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isFading, setIsFading] = useState<boolean>(false);
   const [selectedText, setSelectedText] = useState<string>('');
   const [selectionCoords, setSelectionCoords] = useState<{ x: number; y: number } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const pointerDownRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  useEffect(() => {
+    if (externalSectionIndex !== undefined && externalSectionIndex !== sectionIndex) {
+      setIsFading(true);
+      const timer = setTimeout(() => {
+        setSectionIndex(externalSectionIndex);
+        setTimeout(() => setIsFading(false), 50);
+      }, 180);
+      return () => clearTimeout(timer);
+    }
+  }, [externalSectionIndex]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -93,27 +99,56 @@ export const TxtReader: React.FC<TxtReaderProps> = ({
   }, [sectionIndex, parsed]);
 
   const goToNext = () => {
-    if (parsed && sectionIndex < parsed.sections.length - 1) {
-      setSectionIndex((prev) => prev + 1);
+    if (parsed && sectionIndex < parsed.sections.length - 1 && !isFading) {
+      setIsFading(true);
+      setTimeout(() => {
+        setSectionIndex((prev) => prev + 1);
+        setTimeout(() => setIsFading(false), 50);
+      }, 180);
     }
   };
 
   const goToPrev = () => {
-    if (sectionIndex > 0) {
-      setSectionIndex((prev) => prev - 1);
+    if (sectionIndex > 0 && !isFading) {
+      setIsFading(true);
+      setTimeout(() => {
+        setSectionIndex((prev) => prev - 1);
+        setTimeout(() => setIsFading(false), 50);
+      }, 180);
     }
   };
 
-  const handleMouseUp = () => {
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) {
-      setSelectedText('');
-      setSelectionCoords(null);
-      return;
-    }
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
 
-    const text = selection.toString().trim();
-    if (text.length >= 3) {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        goToNext();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        goToPrev();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [parsed, sectionIndex, isFading]);
+
+  // Tap-only navigation detection
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    pointerDownRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      time: Date.now(),
+    };
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Check text selection for quotes
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed && selection.toString().trim().length >= 3) {
+      const text = selection.toString().trim();
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
       setSelectedText(text);
@@ -121,9 +156,41 @@ export const TxtReader: React.FC<TxtReaderProps> = ({
         x: rect.left + rect.width / 2,
         y: rect.top + window.scrollY,
       });
+      pointerDownRef.current = null;
+      return;
     } else {
       setSelectedText('');
       setSelectionCoords(null);
+    }
+
+    if (!pointerDownRef.current) return;
+    const start = pointerDownRef.current;
+    pointerDownRef.current = null;
+
+    const dx = Math.abs(e.clientX - start.x);
+    const dy = Math.abs(e.clientY - start.y);
+    const duration = Date.now() - start.time;
+
+    // Must be a clean tap (not dragging or vertical scroll)
+    if (dx > 12 || dy > 12 || duration > 350) {
+      return;
+    }
+
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, input, [role="button"], .selection-popover')) {
+      return;
+    }
+
+    // Tap Zones: Left 32% = Prev, Right 32% = Next, Center = Toggle Immersive
+    const screenWidth = window.innerWidth;
+    const clickX = e.clientX;
+
+    if (clickX < screenWidth * 0.32) {
+      goToPrev();
+    } else if (clickX > screenWidth * 0.68) {
+      goToNext();
+    } else {
+      onToggleImmersive();
     }
   };
 
@@ -136,91 +203,15 @@ export const TxtReader: React.FC<TxtReaderProps> = ({
   }
 
   const currentSection = parsed.sections[sectionIndex];
-  const totalSections = parsed.sections.length;
-
-  const renderSectionProse = (sec: { title: string; content: string } | undefined, isCurrent = false) => {
-    if (!sec) return <div className="paper-page-empty" />;
-    const paragraphs = sec.content.split(/\r?\n\s*\r?\n/);
-
-    return (
-      <div className={`reader-prose-wrapper width-${settings.columnWidth} margin-${settings.pageMargins}`}>
-        <article
-          className={`reader-prose font-${settings.fontFamily} align-${settings.textAlign}`}
-          style={{
-            fontSize: `${settings.fontSize}px`,
-            lineHeight: settings.lineSpacing,
-          }}
-        >
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.8rem', marginBottom: '2rem' }}>
-            {sec.title}
-          </h1>
-
-          {paragraphs.map((p, idx) => {
-            const cleanP = p.trim();
-            if (!cleanP) return null;
-
-            if (cleanP.startsWith('>')) {
-              return (
-                <blockquote key={idx}>
-                  {cleanP.replace(/^>\s*/, '')}
-                </blockquote>
-              );
-            }
-
-            if (cleanP.startsWith('#')) {
-              return (
-                <h2 key={idx}>
-                  {cleanP.replace(/^#+\s*/, '')}
-                </h2>
-              );
-            }
-
-            return <p key={idx}>{cleanP}</p>;
-          })}
-        </article>
-
-        {isCurrent && totalSections > 1 && (
-          <div className="chapter-nav-paper-row">
-            <button
-              className="btn-paper-turn"
-              onClick={goToPrev}
-              disabled={sectionIndex === 0}
-              style={{ opacity: sectionIndex === 0 ? 0.35 : 1 }}
-            >
-              <ChevronLeft size={16} />
-              <span>Previous Section</span>
-            </button>
-
-            <span className="font-deutsch" style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>
-              {sectionIndex + 1} / {totalSections}
-            </span>
-
-            <button
-              className="btn-paper-turn"
-              onClick={goToNext}
-              disabled={sectionIndex >= totalSections - 1}
-              style={{ opacity: sectionIndex >= totalSections - 1 ? 0.35 : 1 }}
-            >
-              <span>Next Section</span>
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  };
+  const paragraphs = currentSection ? currentSection.content.split(/\r?\n\s*\r?\n/) : [];
 
   return (
     <div
       ref={containerRef}
       className="reader-body"
-      onMouseUp={handleMouseUp}
-      onTouchEnd={handleMouseUp}
-      onClick={(e) => {
-        if (e.target === containerRef.current || (e.target as HTMLElement).tagName === 'P') {
-          onToggleImmersive();
-        }
-      }}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      style={{ userSelect: 'text', touchAction: 'pan-y' }}
     >
       {selectedText && selectionCoords && (
         <div
@@ -241,16 +232,46 @@ export const TxtReader: React.FC<TxtReaderProps> = ({
         </div>
       )}
 
-      <PaperPageTurner
-        currentContent={renderSectionProse(currentSection, true)}
-        nextContent={renderSectionProse(parsed.sections[sectionIndex + 1])}
-        prevContent={renderSectionProse(parsed.sections[sectionIndex - 1])}
-        hasNext={sectionIndex < totalSections - 1}
-        hasPrev={sectionIndex > 0}
-        onNext={goToNext}
-        onPrev={goToPrev}
-        theme={settings.theme}
-      />
+      <div className={`reader-fade-container ${isFading ? 'fading' : ''}`}>
+        <div className={`reader-prose-wrapper width-${settings.columnWidth} margin-${settings.pageMargins}`}>
+          <article
+            className={`reader-prose font-${settings.fontFamily} align-${settings.textAlign}`}
+            style={{
+              fontSize: `${settings.fontSize}px`,
+              lineHeight: settings.lineSpacing,
+            }}
+          >
+            {currentSection && (
+              <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.8rem', marginBottom: '2rem' }}>
+                {currentSection.title}
+              </h1>
+            )}
+
+            {paragraphs.map((p, idx) => {
+              const cleanP = p.trim();
+              if (!cleanP) return null;
+
+              if (cleanP.startsWith('>')) {
+                return (
+                  <blockquote key={idx}>
+                    {cleanP.replace(/^>\s*/, '')}
+                  </blockquote>
+                );
+              }
+
+              if (cleanP.startsWith('#')) {
+                return (
+                  <h2 key={idx}>
+                    {cleanP.replace(/^#+\s*/, '')}
+                  </h2>
+                );
+              }
+
+              return <p key={idx}>{cleanP}</p>;
+            })}
+          </article>
+        </div>
+      </div>
     </div>
   );
 };

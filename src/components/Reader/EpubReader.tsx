@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { parseEpubFile, type ParsedEpub } from '../../services/parsers/epubParser';
 import { updateBookProgress } from '../../services/db';
 import type { Book, ReaderSettings, TocItem } from '../../types';
-import { ChevronLeft, ChevronRight, Bookmark, Loader2 } from 'lucide-react';
-import { PaperPageTurner } from './PaperPageTurner';
+import { Bookmark, Loader2 } from 'lucide-react';
 
 interface EpubReaderProps {
   book: Book;
@@ -31,14 +30,19 @@ export const EpubReader: React.FC<EpubReaderProps> = ({
     externalChapterIndex !== undefined ? externalChapterIndex : (book.currentLocation?.chapterIndex || 0)
   );
   const [chapterContent, setChapterContent] = useState<{ html: string; title: string }>({ html: '', title: '' });
-  const [chaptersCache, setChaptersCache] = useState<Record<number, { html: string; title: string }>>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isFading, setIsFading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync external chapterIndex when passed from TOC
+  // Sync external chapterIndex when passed from TOC / SwordHub
   useEffect(() => {
     if (externalChapterIndex !== undefined && externalChapterIndex !== chapterIndex) {
-      setChapterIndex(externalChapterIndex);
+      setIsFading(true);
+      const timer = setTimeout(() => {
+        setChapterIndex(externalChapterIndex);
+        setTimeout(() => setIsFading(false), 50);
+      }, 180);
+      return () => clearTimeout(timer);
     }
   }, [externalChapterIndex]);
   
@@ -47,6 +51,7 @@ export const EpubReader: React.FC<EpubReaderProps> = ({
   const [selectionCoords, setSelectionCoords] = useState<{ x: number; y: number } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const pointerDownRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
   // 1. Parse EPUB on mount
   useEffect(() => {
@@ -87,82 +92,75 @@ export const EpubReader: React.FC<EpubReaderProps> = ({
     };
   }, [fileBlob]);
 
-  // 2. Load Chapter whenever chapterIndex changes and preload adjacent chapters
+  // 2. Load Chapter content
   useEffect(() => {
     if (!parsed || parsed.spine.length === 0) return;
 
     const safeIndex = Math.max(0, Math.min(chapterIndex, parsed.spine.length - 1));
     const spineItem = parsed.spine[safeIndex];
 
-    const applyChapter = (res: { html: string; title: string }) => {
-      setChapterContent(res);
-      setChaptersCache((prev) => ({ ...prev, [safeIndex]: res }));
-      setIsLoading(false);
-      onActiveChapterChange(res.title, safeIndex, parsed.spine.length);
+    parsed.loadChapter(spineItem.href)
+      .then((res) => {
+        setChapterContent(res);
+        setIsLoading(false);
+        onActiveChapterChange(res.title, safeIndex, parsed.spine.length);
 
-      // Calculate progress
-      const overallProgress = Math.round(((safeIndex + 1) / parsed.spine.length) * 100);
-      updateBookProgress(book.id, overallProgress, {
-        chapterIndex: safeIndex,
-        chapterHref: spineItem.href,
-        chapterTitle: res.title,
-      });
-
-      // Scroll to top of new chapter
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    };
-
-    if (chaptersCache[safeIndex]) {
-      applyChapter(chaptersCache[safeIndex]);
-    } else {
-      setIsLoading(true);
-      parsed.loadChapter(spineItem.href)
-        .then((res) => {
-          applyChapter(res);
-        })
-        .catch((err) => {
-          console.error('Error loading chapter', err);
-          setError(`Failed to load chapter: ${err.message}`);
-          setIsLoading(false);
+        const overallProgress = Math.round(((safeIndex + 1) / parsed.spine.length) * 100);
+        updateBookProgress(book.id, overallProgress, {
+          chapterIndex: safeIndex,
+          chapterHref: spineItem.href,
+          chapterTitle: res.title,
         });
-    }
 
-    // Preload next chapter
-    if (safeIndex + 1 < parsed.spine.length && !chaptersCache[safeIndex + 1]) {
-      parsed.loadChapter(parsed.spine[safeIndex + 1].href)
-        .then((nextRes) => {
-          setChaptersCache((prev) => ({ ...prev, [safeIndex + 1]: nextRes }));
-        })
-        .catch(() => {});
-    }
-
-    // Preload previous chapter
-    if (safeIndex - 1 >= 0 && !chaptersCache[safeIndex - 1]) {
-      parsed.loadChapter(parsed.spine[safeIndex - 1].href)
-        .then((prevRes) => {
-          setChaptersCache((prev) => ({ ...prev, [safeIndex - 1]: prevRes }));
-        })
-        .catch(() => {});
-    }
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      })
+      .catch((err) => {
+        console.error('Error loading chapter', err);
+        setError(`Failed to load chapter: ${err.message}`);
+        setIsLoading(false);
+      });
   }, [parsed, chapterIndex]);
 
+  // Navigate with smooth fade
   const goToNextChapter = () => {
-    if (parsed && chapterIndex < parsed.spine.length - 1) {
-      setChapterIndex((prev) => prev + 1);
+    if (parsed && chapterIndex < parsed.spine.length - 1 && !isFading) {
+      setIsFading(true);
+      setTimeout(() => {
+        setChapterIndex((prev) => prev + 1);
+        setTimeout(() => setIsFading(false), 50);
+      }, 180);
     }
   };
 
   const goToPrevChapter = () => {
-    if (chapterIndex > 0) {
-      setChapterIndex((prev) => prev - 1);
+    if (chapterIndex > 0 && !isFading) {
+      setIsFading(true);
+      setTimeout(() => {
+        setChapterIndex((prev) => prev - 1);
+        setTimeout(() => setIsFading(false), 50);
+      }, 180);
     }
   };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        goToNextChapter();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        goToPrevChapter();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [parsed, chapterIndex, isFading]);
 
   // Intercept clicks on links inside chapter
   const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-
-    // Check if clicked an internal link
     const link = target.closest('a');
     if (link) {
       const chapterTarget = link.getAttribute('data-chapter-target');
@@ -173,7 +171,11 @@ export const EpubReader: React.FC<EpubReaderProps> = ({
         const targetClean = chapterTarget.split('#')[0];
         const matchedIdx = parsed.spine.findIndex((s) => s.href.split('#')[0] === targetClean);
         if (matchedIdx !== -1) {
-          setChapterIndex(matchedIdx);
+          setIsFading(true);
+          setTimeout(() => {
+            setChapterIndex(matchedIdx);
+            setTimeout(() => setIsFading(false), 50);
+          }, 180);
           return;
         }
       }
@@ -187,28 +189,23 @@ export const EpubReader: React.FC<EpubReaderProps> = ({
         }
       }
     }
-
-    // If click was not on a selection or link, and not text selection in progress, toggle immersive mode on desktop / mobile
-    const sel = window.getSelection();
-    if (!sel || sel.toString().trim().length === 0) {
-      // If user tapped cleanly on empty space
-      if (target === containerRef.current || target.classList.contains('reader-body') || target.tagName === 'P') {
-        onToggleImmersive();
-      }
-    }
   };
 
-  // Handle text selection for saving quotes
-  const handleMouseUp = () => {
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) {
-      setSelectedText('');
-      setSelectionCoords(null);
-      return;
-    }
+  // Tap-only navigation detection
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    pointerDownRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      time: Date.now(),
+    };
+  };
 
-    const text = selection.toString().trim();
-    if (text.length >= 3) {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Check text selection for quotes
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed && selection.toString().trim().length >= 3) {
+      const text = selection.toString().trim();
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
       setSelectedText(text);
@@ -216,9 +213,41 @@ export const EpubReader: React.FC<EpubReaderProps> = ({
         x: rect.left + rect.width / 2,
         y: rect.top + window.scrollY,
       });
+      pointerDownRef.current = null;
+      return;
     } else {
       setSelectedText('');
       setSelectionCoords(null);
+    }
+
+    if (!pointerDownRef.current) return;
+    const start = pointerDownRef.current;
+    pointerDownRef.current = null;
+
+    const dx = Math.abs(e.clientX - start.x);
+    const dy = Math.abs(e.clientY - start.y);
+    const duration = Date.now() - start.time;
+
+    // Must be a clean tap (not dragging or vertical scroll)
+    if (dx > 12 || dy > 12 || duration > 350) {
+      return;
+    }
+
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, input, [role="button"], .selection-popover')) {
+      return;
+    }
+
+    // Tap Zones: Left 32% = Prev, Right 32% = Next, Center = Toggle Immersive
+    const screenWidth = window.innerWidth;
+    const clickX = e.clientX;
+
+    if (clickX < screenWidth * 0.32) {
+      goToPrevChapter();
+    } else if (clickX > screenWidth * 0.68) {
+      goToNextChapter();
+    } else {
+      onToggleImmersive();
     }
   };
 
@@ -232,56 +261,14 @@ export const EpubReader: React.FC<EpubReaderProps> = ({
     );
   }
 
-  const spineLength = parsed?.spine.length || 1;
-
-  const renderChapterProse = (content: { html: string; title: string }, isCurrent = false) => (
-    <div className={`reader-prose-wrapper width-${settings.columnWidth} margin-${settings.pageMargins}`}>
-      <article
-        className={`reader-prose font-${settings.fontFamily} align-${settings.textAlign}`}
-        style={{
-          fontSize: `${settings.fontSize}px`,
-          lineHeight: settings.lineSpacing,
-        }}
-        dangerouslySetInnerHTML={{ __html: content.html }}
-      />
-
-      {isCurrent && (
-        <div className="chapter-nav-paper-row">
-          <button
-            className="btn-paper-turn"
-            onClick={goToPrevChapter}
-            disabled={chapterIndex === 0}
-            style={{ opacity: chapterIndex === 0 ? 0.35 : 1 }}
-          >
-            <ChevronLeft size={16} />
-            <span>Previous Chapter</span>
-          </button>
-
-          <span className="font-deutsch" style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>
-            {chapterIndex + 1} / {spineLength}
-          </span>
-
-          <button
-            className="btn-paper-turn"
-            onClick={goToNextChapter}
-            disabled={chapterIndex >= spineLength - 1}
-            style={{ opacity: chapterIndex >= spineLength - 1 ? 0.35 : 1 }}
-          >
-            <span>Next Chapter</span>
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <div
       ref={containerRef}
       className="reader-body"
       onClick={handleContentClick}
-      onMouseUp={handleMouseUp}
-      onTouchEnd={handleMouseUp}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      style={{ userSelect: 'text', touchAction: 'pan-y' }}
     >
       {/* Selection Popover */}
       {selectedText && selectionCoords && (
@@ -303,22 +290,24 @@ export const EpubReader: React.FC<EpubReaderProps> = ({
         </div>
       )}
 
-      {isLoading && !chaptersCache[chapterIndex] ? (
+      {isLoading ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', gap: '1rem', color: 'var(--text-secondary)' }}>
           <Loader2 size={32} className="animate-spin" />
           <p style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif)' }}>Preparing chapter...</p>
         </div>
       ) : (
-        <PaperPageTurner
-          currentContent={renderChapterProse(chapterContent, true)}
-          nextContent={chaptersCache[chapterIndex + 1] ? renderChapterProse(chaptersCache[chapterIndex + 1]) : undefined}
-          prevContent={chaptersCache[chapterIndex - 1] ? renderChapterProse(chaptersCache[chapterIndex - 1]) : undefined}
-          hasNext={chapterIndex < spineLength - 1}
-          hasPrev={chapterIndex > 0}
-          onNext={goToNextChapter}
-          onPrev={goToPrevChapter}
-          theme={settings.theme}
-        />
+        <div className={`reader-fade-container ${isFading ? 'fading' : ''}`}>
+          <div className={`reader-prose-wrapper width-${settings.columnWidth} margin-${settings.pageMargins}`}>
+            <article
+              className={`reader-prose font-${settings.fontFamily} align-${settings.textAlign}`}
+              style={{
+                fontSize: `${settings.fontSize}px`,
+                lineHeight: settings.lineSpacing,
+              }}
+              dangerouslySetInnerHTML={{ __html: chapterContent.html }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
